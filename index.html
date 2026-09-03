@@ -1,0 +1,1216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Personal Command Center</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .perspective-1000 { perspective: 1000px; }
+    .transform-style-3d { transform-style: preserve-3d; }
+    .backface-hidden { backface-visibility: hidden; }
+    .rotate-y-180 { transform: rotateY(180deg); }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <!-- Top Navigation -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <span class="text-2xl">⚡</span>
+        <h1 class="font-bold text-lg text-slate-900 tracking-tight">Personal Command Center</h1>
+      </div>
+      <div class="flex items-center space-x-2">
+        <button id="syncSettingsBtn" class="text-xs px-3 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-100 flex items-center gap-1.5 font-medium">
+          <span id="syncStatusDot" class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span id="syncStatusText">Local Storage (Sync Setup)</span>
+        </button>
+      </div>
+    </div>
+    <!-- Section Switcher Tabs -->
+    <div class="max-w-6xl mx-auto px-4 flex gap-6 border-t border-slate-100">
+      <button onclick="switchTab('goals')" id="tabBtnGoals" class="py-2.5 font-semibold text-sm border-b-2 border-brand-600 text-brand-600 flex items-center gap-2">
+        🎯 1. SMART Goals & Tasks
+      </button>
+      <button onclick="switchTab('english')" id="tabBtnEnglish" class="py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2">
+        🔤 2. English Lab & Flashcards
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto p-4 sm:p-6">
+
+    <!-- ==================== SECTION 1: SMART GOALS ==================== -->
+    <section id="sectionGoals">
+      <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+        <div>
+          <h2 class="text-xl font-bold text-slate-900">SMART Goals Dashboard</h2>
+          <p class="text-sm text-slate-500">Track high-level goals, break them into objectives and daily tasks.</p>
+        </div>
+        <div class="flex gap-2">
+          <select id="categoryFilter" onchange="renderGoals()" class="text-sm border border-slate-300 rounded-lg px-3 py-2 bg-white">
+            <option value="All">All Categories</option>
+          </select>
+          <button onclick="openGoalModal()" class="bg-brand-600 hover:bg-brand-700 text-white text-sm font-medium px-4 py-2 rounded-lg shadow-sm transition">
+            + Add New Goal
+          </button>
+        </div>
+      </div>
+
+      <!-- Goals Container -->
+      <div id="goalsContainer" class="grid gap-6"></div>
+    </section>
+
+    <!-- ==================== SECTION 2: ENGLISH LAB ==================== -->
+    <section id="sectionEnglish" class="hidden">
+      <!-- Sub Tabs for English Lab -->
+      <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-3">
+        <button onclick="switchEnglishSubTab('cards')" id="subTabCards" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white">
+          🗂 Flashcard Review
+        </button>
+        <button onclick="switchEnglishSubTab('test')" id="subTabTest" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300">
+          ✍️ Rewrite & Spelling Test
+        </button>
+        <button onclick="switchEnglishSubTab('grammar')" id="subTabGrammar" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300">
+          📖 Grammar Bank
+        </button>
+        <button onclick="switchEnglishSubTab('manage')" id="subTabManage" class="px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300">
+          📥 Upload / Add 25 Words
+        </button>
+      </div>
+
+      <!-- 1. Flashcard Review Sub-Tab -->
+      <div id="viewFlashcards" class="max-w-xl mx-auto">
+        <div class="flex justify-between items-center mb-3">
+          <select id="deckSelector" onchange="loadSelectedDeck()" class="text-sm border border-slate-300 rounded-lg px-3 py-1.5 bg-white font-medium"></select>
+          <div class="flex items-center gap-2">
+            <span id="cardStatusBadge" class="text-xs px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-600">New</span>
+            <span id="cardProgress" class="text-xs font-bold text-slate-500">0 / 0</span>
+          </div>
+        </div>
+
+        <div id="flashcardBox" class="w-full h-80 perspective-1000 cursor-pointer" onclick="toggleCardFlip()">
+          <div id="cardInner" class="relative w-full h-full transform-style-3d transition-transform duration-500 shadow-lg rounded-2xl bg-white border border-slate-200 p-8 flex flex-col justify-between text-center select-none">
+            <!-- Front -->
+            <div id="cardFront" class="backface-hidden absolute inset-0 p-8 flex flex-col justify-between">
+              <div class="flex justify-between items-center text-xs font-semibold text-brand-600">
+                <span>Front • Click card to flip</span>
+                <button onclick="event.stopPropagation(); openEditCardModal();" class="text-slate-400 hover:text-brand-600 font-medium">✏️ Edit Card</button>
+              </div>
+              <div class="my-auto">
+                <h3 id="cardWord" class="text-3xl font-extrabold text-slate-900 mb-3"></h3>
+                <button onclick="event.stopPropagation(); speakWord();" class="p-2 text-brand-600 bg-brand-50 rounded-full hover:bg-brand-100 transition inline-flex items-center gap-1 text-xs font-semibold">
+                  🔊 Listen
+                </button>
+              </div>
+              <p class="text-xs text-slate-400">Click to reveal definition & sentence</p>
+            </div>
+            <!-- Back -->
+            <div id="cardBack" class="backface-hidden rotate-y-180 absolute inset-0 p-8 flex flex-col justify-between bg-brand-50 rounded-2xl">
+              <div class="flex justify-between items-center text-xs font-semibold text-brand-700">
+                <span>Back • Meaning & Context</span>
+                <button onclick="event.stopPropagation(); openEditCardModal();" class="text-slate-400 hover:text-brand-700 font-medium">✏️ Edit Card</button>
+              </div>
+              <div class="my-auto space-y-3">
+                <p id="cardMeaning" class="text-lg font-bold text-slate-800"></p>
+                <p id="cardExample" class="text-sm text-slate-600 italic bg-white/80 p-3 rounded-lg border border-brand-100"></p>
+              </div>
+              <p class="text-xs text-slate-400">Click to flip back</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-between items-center mt-6">
+          <button onclick="prevCard()" class="px-4 py-2 text-sm font-medium bg-white border border-slate-300 rounded-lg hover:bg-slate-50 shadow-sm">← Previous</button>
+          <button onclick="nextCard()" class="px-4 py-2 text-sm font-medium bg-brand-600 text-white rounded-lg hover:bg-brand-700 shadow-sm">Next Card →</button>
+        </div>
+      </div>
+
+      <!-- 2. Rewrite / Spelling Test Sub-Tab -->
+      <div id="viewTest" class="max-w-xl mx-auto">
+        <!-- Active Test Box -->
+        <div id="testActivePanel" class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <div class="flex justify-between items-center mb-4">
+            <div>
+              <h3 class="font-bold text-slate-800">Spelling & Recall Test</h3>
+              <p id="testStepIndicator" class="text-xs text-slate-400">Question 0 of 0</p>
+            </div>
+            <span id="testScore" class="text-xs font-semibold px-2.5 py-1 bg-brand-50 text-brand-700 rounded-md">Score: 0</span>
+          </div>
+
+          <div class="mb-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+            <span class="text-xs uppercase text-slate-400 font-bold block mb-1">Definition Prompt:</span>
+            <p id="testPromptMeaning" class="text-base font-semibold text-slate-800"></p>
+            <p id="testPromptExample" class="text-xs italic text-slate-500 mt-2"></p>
+          </div>
+
+          <form onsubmit="checkTestWord(event)" class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Type the exact English word:</label>
+              <input type="text" id="testInputWord" autofocus autocomplete="off" class="w-full border border-slate-300 rounded-lg p-2.5 text-base font-medium focus:ring-2 focus:ring-brand-500 outline-none" placeholder="Type here..." />
+            </div>
+            <div id="testFeedback" class="hidden text-sm font-semibold p-2.5 rounded-lg"></div>
+            <div class="flex gap-2">
+              <button type="submit" id="testCheckBtn" class="flex-1 bg-brand-600 text-white py-2 rounded-lg font-medium hover:bg-brand-700 transition">Check Answer</button>
+              <button type="button" onclick="skipTestWord()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg">Skip →</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Test Completed Summary Screen -->
+        <div id="testCompletePanel" class="hidden bg-white border border-slate-200 rounded-xl p-6 shadow-sm text-center">
+          <span class="text-4xl block mb-2">🎉</span>
+          <h3 class="text-xl font-bold text-slate-900 mb-1">Test Completed!</h3>
+          <p id="testSummaryText" class="text-sm text-slate-500 mb-4"></p>
+
+          <div class="grid grid-cols-2 gap-3 mb-5 text-left text-xs">
+            <div class="bg-emerald-50 border border-emerald-200 p-3 rounded-lg">
+              <span class="font-bold text-emerald-800 block mb-1">✅ Mastered (<span id="testCountCorrect">0</span>)</span>
+              <ul id="testListCorrect" class="space-y-1 text-emerald-700 font-medium"></ul>
+            </div>
+            <div class="bg-red-50 border border-red-200 p-3 rounded-lg">
+              <span class="font-bold text-red-800 block mb-1">❌ Needs Review (<span id="testCountWrong">0</span>)</span>
+              <ul id="testListWrong" class="space-y-1 text-red-700 font-medium"></ul>
+            </div>
+          </div>
+
+          <div class="flex flex-col sm:flex-row gap-2">
+            <button onclick="startTest(false)" class="flex-1 bg-brand-600 text-white py-2 rounded-lg text-xs font-semibold hover:bg-brand-700">Restart Full Deck</button>
+            <button id="btnRetestMissed" onclick="startTest(true)" class="flex-1 bg-amber-500 text-white py-2 rounded-lg text-xs font-semibold hover:bg-amber-600">Practice Missed Words Only</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Grammar Bank Sub-Tab -->
+      <div id="viewGrammar" class="hidden max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-4">
+          <div>
+            <h3 class="font-bold text-slate-800">Grammar Bank</h3>
+            <p class="text-xs text-slate-500">Rules, clear formulas, usage logic, and common mistakes.</p>
+          </div>
+          <button onclick="openGrammarModal()" class="text-xs font-semibold bg-brand-600 text-white px-3.5 py-2 rounded-lg hover:bg-brand-700">+ Add Grammar Rule</button>
+        </div>
+        <div id="grammarContainer" class="grid gap-5"></div>
+      </div>
+
+      <!-- 4. Batch Upload (25 Words) Sub-Tab -->
+      <div id="viewManage" class="hidden max-w-2xl mx-auto">
+        <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+          <h3 class="font-bold text-slate-800 text-base mb-1">Paste / Upload 25 Words</h3>
+          <p class="text-xs text-slate-500 mb-4">Paste words in the format: <code class="bg-slate-100 px-1.5 py-0.5 rounded text-brand-600 font-mono">word | meaning | example sentence</code></p>
+          
+          <div class="space-y-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Deck / Batch Name</label>
+              <input type="text" id="newDeckName" placeholder="e.g., Batch 1 (Words 1-25)" class="w-full border border-slate-300 rounded-lg p-2 text-sm outline-none" />
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Paste 25 Words (1 line per word)</label>
+              <textarea id="batchTextarea" rows="8" placeholder="resilient | able to recover quickly | She is resilient after setbacks&#10;articulate | fluent and clear in speech | He gave an articulate presentation" class="w-full border border-slate-300 rounded-lg p-2.5 text-xs font-mono outline-none"></textarea>
+            </div>
+            <button onclick="saveBatchWords()" class="w-full bg-brand-600 hover:bg-brand-700 text-white font-medium py-2 rounded-lg text-sm shadow-sm transition">
+              Create 25-Word Deck
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==================== MODALS ==================== -->
+
+  <!-- Add/Edit Goal Modal -->
+  <div id="goalModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 id="goalModalTitle" class="text-base font-bold text-slate-900">Add SMART Goal</h3>
+        <button onclick="closeGoalModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <input type="hidden" id="editingGoalId" value="" />
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
+          <input type="text" id="goalCategory" placeholder="e.g., English, Career, Health, Finance" class="w-full border border-slate-300 rounded-lg p-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Goal Statement (Specific & Measurable)</label>
+          <input type="text" id="goalTitle" placeholder="e.g., Master 500 B2 English words by Nov 2026" class="w-full border border-slate-300 rounded-lg p-2 text-sm" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Target Date</label>
+            <input type="date" id="goalDeadline" class="w-full border border-slate-300 rounded-lg p-2 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Priority</label>
+            <select id="goalPriority" class="w-full border border-slate-300 rounded-lg p-2 text-sm bg-white">
+              <option value="High">High 🔴</option>
+              <option value="Medium" selected>Medium 🟡</option>
+              <option value="Low">Low 🟢</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeGoalModal()" class="px-4 py-2 text-xs font-semibold rounded-lg text-slate-600 hover:bg-slate-100">Cancel</button>
+        <button onclick="saveGoalSubmit()" class="px-4 py-2 text-xs font-semibold rounded-lg bg-brand-600 text-white hover:bg-brand-700">Save Goal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add/Edit Grammar Modal -->
+  <div id="grammarModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex justify-between items-center">
+        <h3 id="grammarModalTitle" class="text-base font-bold text-slate-900">Add Grammar Note</h3>
+        <button onclick="closeGrammarModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <input type="hidden" id="editingGrammarId" value="" />
+      <div class="space-y-3">
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Rule / Topic Name</label>
+            <input type="text" id="gTopic" placeholder="e.g., Second Conditional" class="w-full border border-slate-300 rounded-lg p-2 text-sm" />
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Tag / Category</label>
+            <input type="text" id="gTag" placeholder="e.g., Conditionals, B2" class="w-full border border-slate-300 rounded-lg p-2 text-sm" />
+          </div>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Structure / Formula</label>
+          <input type="text" id="gFormula" placeholder="e.g., If + Past Simple, ... would + base verb" class="w-full border border-slate-300 rounded-lg p-2 text-sm font-mono text-brand-700 bg-brand-50" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">When to Use (Usage Logic)</label>
+          <textarea id="gUsage" rows="2" placeholder="e.g., For hypothetical or imaginary situations in the present or future." class="w-full border border-slate-300 rounded-lg p-2 text-sm"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Example Sentences (1 per line)</label>
+          <textarea id="gExamples" rows="3" placeholder="If I won the lottery, I would buy a house.&#10;If she had more time, she would study French." class="w-full border border-slate-300 rounded-lg p-2 text-sm"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">⚠️ Common Mistake & Fix (Optional)</label>
+          <input type="text" id="gMistake" placeholder="❌ Don't say: If I would know... / ✅ Say: If I knew..." class="w-full border border-red-200 rounded-lg p-2 text-xs bg-red-50/50" />
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+        <button onclick="closeGrammarModal()" class="px-3 py-1.5 text-xs text-slate-600">Cancel</button>
+        <button onclick="saveGrammarSubmit()" class="px-4 py-2 text-xs font-semibold bg-brand-600 text-white rounded-lg hover:bg-brand-700">Save Grammar Rule</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Flashcard Modal -->
+  <div id="cardEditModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-base font-bold text-slate-900">Edit Flashcard</h3>
+        <button onclick="closeEditCardModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Word</label>
+          <input type="text" id="editCardWord" class="w-full border border-slate-300 rounded-lg p-2 text-sm" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Definition / Meaning</label>
+          <textarea id="editCardMeaning" rows="2" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></textarea>
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Context / Example Sentence</label>
+          <textarea id="editCardExample" rows="2" class="w-full border border-slate-300 rounded-lg p-2 text-sm"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+        <button onclick="deleteCurrentCard()" class="text-xs text-red-600 hover:underline">Delete Word</button>
+        <div class="flex gap-2">
+          <button onclick="closeEditCardModal()" class="px-3 py-1.5 text-xs text-slate-600">Cancel</button>
+          <button onclick="saveCardEdit()" class="px-4 py-1.5 text-xs font-semibold bg-brand-600 text-white rounded-lg">Update Card</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase / Cloud Sync Modal -->
+  <div id="syncModal" class="hidden fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-xl shadow-xl max-w-lg w-full p-6 space-y-4">
+      <div class="flex justify-between items-center">
+        <h3 class="text-base font-bold text-slate-900">Multi-Device Cloud Sync</h3>
+        <button onclick="closeSyncModal()" class="text-slate-400 hover:text-slate-600 text-xl font-bold">&times;</button>
+      </div>
+      <p class="text-xs text-slate-500 leading-relaxed">
+        Connect to free Firebase Firestore to keep your data synced across mobile, desktop, and tablet in real time.
+      </p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Your Secret Sync Key (Identifier)</label>
+          <input type="text" id="syncDocId" placeholder="e.g., my-private-english-vault" class="w-full border border-slate-300 rounded-lg p-2 text-xs" />
+        </div>
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Firebase Config JSON Object</label>
+          <textarea id="firebaseConfigInput" rows="4" placeholder='{"apiKey": "...", "projectId": "...", ...}' class="w-full border border-slate-300 rounded-lg p-2 text-xs font-mono"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-between items-center pt-2 border-t border-slate-100">
+        <button onclick="exportDataBackup()" class="text-xs text-brand-600 font-semibold hover:underline">Download Backup JSON</button>
+        <div class="flex gap-2">
+          <button onclick="closeSyncModal()" class="px-3 py-1.5 text-xs text-slate-600">Close</button>
+          <button onclick="saveFirebaseSettings()" class="px-4 py-1.5 text-xs font-semibold bg-brand-600 text-white rounded-lg">Save & Connect</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== APPLICATION LOGIC ==================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
+    import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+
+    // Application Data State
+    let state = {
+      categories: ['English', 'Career', 'Health'],
+      goals: [],
+      decks: [
+        {
+          id: 'deck-sample',
+          name: 'Batch 1 (Academic Foundations)',
+          words: [
+            { id: 'w1', word: 'resilient', meaning: 'able to recover quickly from difficult conditions', example: 'She was resilient in the face of adversity.', status: 'new' },
+            { id: 'w2', word: 'articulate', meaning: 'fluent and clear in speech', example: 'He gave an articulate speech at the summit.', status: 'new' },
+            { id: 'w3', word: 'diligent', meaning: 'showing persistent care and effort', example: 'She is diligent in her daily vocabulary drills.', status: 'new' }
+          ]
+        }
+      ],
+      grammar: [
+        {
+          id: 'g1',
+          topic: 'Second Conditional',
+          tag: 'Conditionals',
+          formula: 'If + Past Simple, ... would + base verb',
+          usage: 'Use for hypothetical, imaginary, or unlikely situations in the present or future.',
+          examples: [
+            'If I had more time, I would read 20 pages every night.',
+            'If he lived closer to work, he would walk instead of drive.'
+          ],
+          mistake: '❌ Don’t say: If I would have money... / ✅ Say: If I had money, I would buy it.'
+        }
+      ]
+    };
+
+    let currentDeckIndex = 0;
+    let currentCardIndex = 0;
+    let isFlipped = false;
+
+    // Test State
+    let testState = {
+      activeQueue: [],
+      totalCount: 0,
+      currentIndex: 0,
+      currentItem: null,
+      correctList: [],
+      wrongList: []
+    };
+
+    let db = null;
+    let docRef = null;
+
+    // Initialize Application
+    window.addEventListener('DOMContentLoaded', async () => {
+      loadSavedLocalData();
+      await initFirebaseIfConfigured();
+      renderAll();
+    });
+
+    function loadSavedLocalData() {
+      const saved = localStorage.getItem('personal_dashboard_data');
+      if (saved) {
+        try { state = JSON.parse(saved); } catch (e) { console.error(e); }
+      }
+    }
+
+    async function initFirebaseIfConfigured() {
+      const fbConfigStr = localStorage.getItem('fb_config');
+      const docId = localStorage.getItem('fb_doc_id') || 'default_user';
+
+      if (fbConfigStr) {
+        try {
+          const config = JSON.parse(fbConfigStr);
+          const app = initializeApp(config);
+          db = getFirestore(app);
+          docRef = doc(db, 'dashboards', docId);
+
+          const snap = await getDoc(docRef);
+          if (snap.exists()) {
+            state = snap.data();
+          } else {
+            await setDoc(docRef, state);
+          }
+          document.getElementById('syncStatusDot').className = 'w-2 h-2 rounded-full bg-emerald-500';
+          document.getElementById('syncStatusText').textContent = 'Cloud Synced';
+        } catch (err) {
+          console.error('Firebase setup failed:', err);
+        }
+      }
+    }
+
+    async function persist() {
+      localStorage.setItem('personal_dashboard_data', JSON.stringify(state));
+      if (db && docRef) {
+        try {
+          await setDoc(docRef, state);
+        } catch (e) {
+          console.error("Cloud sync error:", e);
+        }
+      }
+    }
+
+    // --- Master Render ---
+    window.renderAll = function() {
+      renderCategoryOptions();
+      renderGoals();
+      renderDeckDropdown();
+      renderCurrentCard();
+      renderGrammarRules();
+      startTest(false);
+    };
+
+    // --- SECTION 1: GOALS LOGIC (WITH FULL EDITING) ---
+    function renderCategoryOptions() {
+      const select = document.getElementById('categoryFilter');
+      const cats = Array.from(new Set([...state.categories, ...state.goals.map(g => g.category)]));
+      select.innerHTML = `<option value="All">All Categories</option>` + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    window.renderGoals = function() {
+      const container = document.getElementById('goalsContainer');
+      const filter = document.getElementById('categoryFilter').value;
+      const filteredGoals = filter === 'All' ? state.goals : state.goals.filter(g => g.category === filter);
+
+      if (filteredGoals.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center bg-white rounded-xl border border-dashed border-slate-300 text-slate-400 text-sm">No goals in this category yet. Click "+ Add New Goal" to start.</div>`;
+        return;
+      }
+
+      container.innerHTML = filteredGoals.map(goal => {
+        let totalItems = 0;
+        let doneItems = 0;
+        (goal.objectives || []).forEach(obj => {
+          totalItems++;
+          if (obj.done) doneItems++;
+          (obj.tasks || []).forEach(t => {
+            totalItems++;
+            if (t.done) doneItems++;
+          });
+        });
+        const progress = totalItems > 0 ? Math.round((doneItems / totalItems) * 100) : 0;
+
+        return `
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">${goal.category}</span>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-md ${goal.priority === 'High' ? 'bg-red-50 text-red-600' : 'bg-slate-100 text-slate-600'}">${goal.priority}</span>
+              </div>
+              <div class="text-xs font-medium text-slate-500 flex items-center gap-3">
+                ${goal.deadline ? `<span>📅 Target: ${goal.deadline}</span>` : ''}
+                <button onclick="editGoal('${goal.id}')" class="text-brand-600 hover:text-brand-800 font-semibold">✏️ Edit</button>
+                <button onclick="deleteGoal('${goal.id}')" class="text-slate-400 hover:text-red-500 text-base">&times;</button>
+              </div>
+            </div>
+
+            <h3 class="text-base font-bold text-slate-900 mb-2">${goal.title}</h3>
+
+            <!-- Progress Bar -->
+            <div class="mb-4">
+              <div class="flex justify-between text-xs font-semibold text-slate-500 mb-1">
+                <span>Progress</span>
+                <span>${progress}%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div class="bg-brand-600 h-2 transition-all duration-300" style="width: ${progress}%"></div>
+              </div>
+            </div>
+
+            <!-- Objectives & Tasks -->
+            <div class="space-y-3 border-t border-slate-100 pt-3">
+              ${(goal.objectives || []).map(obj => `
+                <div class="bg-slate-50 p-3 rounded-lg border border-slate-100">
+                  <div class="flex items-center justify-between">
+                    <label class="flex items-center gap-2 text-sm font-semibold text-slate-800 cursor-pointer">
+                      <input type="checkbox" ${obj.done ? 'checked' : ''} onchange="toggleObjectiveDone('${goal.id}', '${obj.id}')" class="rounded text-brand-600 focus:ring-brand-500 w-4 h-4">
+                      <span class="${obj.done ? 'line-through text-slate-400' : ''}">${obj.text}</span>
+                    </label>
+                    <div class="flex items-center gap-2">
+                      <button onclick="editObjectivePrompt('${goal.id}', '${obj.id}')" class="text-slate-400 hover:text-brand-600 text-xs">✏️</button>
+                      <button onclick="deleteObjective('${goal.id}', '${obj.id}')" class="text-slate-400 hover:text-red-500 text-xs">&times;</button>
+                    </div>
+                  </div>
+
+                  <!-- Tasks -->
+                  <div class="pl-6 mt-2 space-y-1.5 border-l-2 border-slate-200 ml-2">
+                    ${(obj.tasks || []).map(task => `
+                      <div class="flex items-center justify-between text-xs">
+                        <label class="flex items-center gap-2 cursor-pointer text-slate-600">
+                          <input type="checkbox" ${task.done ? 'checked' : ''} onchange="toggleTaskDone('${goal.id}', '${obj.id}', '${task.id}')" class="rounded text-brand-600 w-3.5 h-3.5">
+                          <span class="${task.done ? 'line-through text-slate-400' : ''}">${task.text}</span>
+                        </label>
+                        <button onclick="deleteTask('${goal.id}', '${obj.id}', '${task.id}')" class="text-slate-300 hover:text-red-500">&times;</button>
+                      </div>
+                    `).join('')}
+
+                    <form onsubmit="addTask(event, '${goal.id}', '${obj.id}')" class="pt-1 flex gap-1">
+                      <input type="text" placeholder="+ Add task (optional)..." class="text-xs bg-white border border-slate-200 rounded px-2 py-1 flex-1 outline-none">
+                    </form>
+                  </div>
+                </div>
+              `).join('')}
+
+              <!-- Add Objective -->
+              <form onsubmit="addObjective(event, '${goal.id}')" class="pt-1 flex gap-2">
+                <input type="text" placeholder="+ Add new objective / milestone..." class="text-xs border border-slate-300 rounded-lg px-3 py-1.5 flex-1 outline-none bg-white">
+                <button type="submit" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-slate-700">Add</button>
+              </form>
+            </div>
+          </div>
+        `;
+      }).join('');
+    };
+
+    window.openGoalModal = function() {
+      document.getElementById('editingGoalId').value = '';
+      document.getElementById('goalModalTitle').textContent = 'Add SMART Goal';
+      document.getElementById('goalCategory').value = '';
+      document.getElementById('goalTitle').value = '';
+      document.getElementById('goalDeadline').value = '';
+      document.getElementById('goalPriority').value = 'Medium';
+      document.getElementById('goalModal').classList.remove('hidden');
+    };
+
+    window.editGoal = function(goalId) {
+      const goal = state.goals.find(g => g.id === goalId);
+      if (!goal) return;
+      document.getElementById('editingGoalId').value = goal.id;
+      document.getElementById('goalModalTitle').textContent = 'Edit SMART Goal';
+      document.getElementById('goalCategory').value = goal.category;
+      document.getElementById('goalTitle').value = goal.title;
+      document.getElementById('goalDeadline').value = goal.deadline || '';
+      document.getElementById('goalPriority').value = goal.priority || 'Medium';
+      document.getElementById('goalModal').classList.remove('hidden');
+    };
+
+    window.saveGoalSubmit = async function() {
+      const editingId = document.getElementById('editingGoalId').value;
+      const category = document.getElementById('goalCategory').value.trim() || 'General';
+      const title = document.getElementById('goalTitle').value.trim();
+      const deadline = document.getElementById('goalDeadline').value;
+      const priority = document.getElementById('goalPriority').value;
+
+      if (!title) return alert('Goal statement cannot be empty.');
+
+      if (editingId) {
+        const goal = state.goals.find(g => g.id === editingId);
+        if (goal) {
+          goal.category = category;
+          goal.title = title;
+          goal.deadline = deadline;
+          goal.priority = priority;
+        }
+      } else {
+        state.goals.push({
+          id: 'goal-' + Date.now(),
+          category,
+          title,
+          deadline,
+          priority,
+          objectives: []
+        });
+      }
+
+      if (!state.categories.includes(category)) state.categories.push(category);
+
+      await persist();
+      closeGoalModal();
+      renderAll();
+    };
+
+    window.deleteGoal = async function(id) {
+      if (confirm('Delete this goal?')) {
+        state.goals = state.goals.filter(g => g.id !== id);
+        await persist();
+        renderGoals();
+      }
+    };
+
+    window.editObjectivePrompt = async function(goalId, objId) {
+      const goal = state.goals.find(g => g.id === goalId);
+      const obj = goal?.objectives.find(o => o.id === objId);
+      if (!obj) return;
+      const updated = prompt('Edit objective text:', obj.text);
+      if (updated !== null && updated.trim() !== '') {
+        obj.text = updated.trim();
+        await persist();
+        renderGoals();
+      }
+    };
+
+    window.addObjective = async function(e, goalId) {
+      e.preventDefault();
+      const input = e.target.querySelector('input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const goal = state.goals.find(g => g.id === goalId);
+      if (goal) {
+        if (!goal.objectives) goal.objectives = [];
+        goal.objectives.push({ id: 'obj-' + Date.now(), text, done: false, tasks: [] });
+        input.value = '';
+        await persist();
+        renderGoals();
+      }
+    };
+
+    window.deleteObjective = async function(goalId, objId) {
+      const goal = state.goals.find(g => g.id === goalId);
+      if (goal) {
+        goal.objectives = goal.objectives.filter(o => o.id !== objId);
+        await persist();
+        renderGoals();
+      }
+    };
+
+    window.toggleObjectiveDone = async function(goalId, objId) {
+      const goal = state.goals.find(g => g.id === goalId);
+      const obj = goal?.objectives.find(o => o.id === objId);
+      if (obj) {
+        obj.done = !obj.done;
+        await persist();
+        renderGoals();
+      }
+    };
+
+    window.addTask = async function(e, goalId, objId) {
+      e.preventDefault();
+      const input = e.target.querySelector('input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      const goal = state.goals.find(g => g.id === goalId);
+      const obj = goal?.objectives.find(o => o.id === objId);
+      if (obj) {
+        if (!obj.tasks) obj.tasks = [];
+        obj.tasks.push({ id: 't-' + Date.now(), text, done: false });
+        input.value = '';
+        await persist();
+        renderGoals();
+      }
+    };
+
+    window.toggleTaskDone = async function(goalId, objId, taskId) {
+      const goal = state.goals.find(g => g.id === goalId);
+      const obj = goal?.objectives.find(o => o.id === objId);
+      const task = obj?.tasks.find(t => t.id === taskId);
+      if (task) {
+        task.done = !task.done;
+        await persist();
+        renderGoals();
+      }
+    };
+
+    window.deleteTask = async function(goalId, objId, taskId) {
+      const goal = state.goals.find(g => g.id === goalId);
+      const obj = goal?.objectives.find(o => o.id === objId);
+      if (obj) {
+        obj.tasks = obj.tasks.filter(t => t.id !== taskId);
+        await persist();
+        renderGoals();
+      }
+    };
+
+    // --- SECTION 2: FLASHCARD REVIEW (WITH EDITING) ---
+    function renderDeckDropdown() {
+      const sel = document.getElementById('deckSelector');
+      sel.innerHTML = state.decks.map((d, i) => `<option value="${i}">${d.name} (${d.words.length} words)</option>`).join('');
+    }
+
+    window.loadSelectedDeck = function() {
+      currentDeckIndex = parseInt(document.getElementById('deckSelector').value) || 0;
+      currentCardIndex = 0;
+      isFlipped = false;
+      resetCardFlip();
+      renderCurrentCard();
+      startTest(false);
+    };
+
+    function renderCurrentCard() {
+      const deck = state.decks[currentDeckIndex];
+      const prog = document.getElementById('cardProgress');
+      const badge = document.getElementById('cardStatusBadge');
+
+      if (!deck || deck.words.length === 0) {
+        document.getElementById('cardWord').textContent = "Empty Deck";
+        document.getElementById('cardMeaning').textContent = "Upload or add words via the Upload tab.";
+        document.getElementById('cardExample').textContent = "";
+        prog.textContent = "0 / 0";
+        badge.className = 'hidden';
+        return;
+      }
+
+      badge.classList.remove('hidden');
+      prog.textContent = `${currentCardIndex + 1} / ${deck.words.length}`;
+      const item = deck.words[currentCardIndex];
+
+      document.getElementById('cardWord').textContent = item.word;
+      document.getElementById('cardMeaning').textContent = item.meaning;
+      document.getElementById('cardExample').textContent = item.example ? `"${item.example}"` : '';
+
+      if (item.status === 'mastered') {
+        badge.textContent = '⭐ Mastered';
+        badge.className = 'text-xs px-2 py-0.5 rounded font-medium bg-emerald-100 text-emerald-700';
+      } else if (item.status === 'review') {
+        badge.textContent = '⚠️ Needs Review';
+        badge.className = 'text-xs px-2 py-0.5 rounded font-medium bg-red-100 text-red-700';
+      } else {
+        badge.textContent = '📘 Learning';
+        badge.className = 'text-xs px-2 py-0.5 rounded font-medium bg-slate-100 text-slate-600';
+      }
+    }
+
+    window.toggleCardFlip = function() {
+      isFlipped = !isFlipped;
+      document.getElementById('cardInner').classList.toggle('rotate-y-180', isFlipped);
+    };
+
+    function resetCardFlip() {
+      isFlipped = false;
+      document.getElementById('cardInner').classList.remove('rotate-y-180');
+    }
+
+    window.nextCard = function() {
+      const deck = state.decks[currentDeckIndex];
+      if (deck && currentCardIndex < deck.words.length - 1) {
+        currentCardIndex++;
+        resetCardFlip();
+        renderCurrentCard();
+      }
+    };
+
+    window.prevCard = function() {
+      if (currentCardIndex > 0) {
+        currentCardIndex--;
+        resetCardFlip();
+        renderCurrentCard();
+      }
+    };
+
+    window.speakWord = function() {
+      const deck = state.decks[currentDeckIndex];
+      if (!deck || !deck.words[currentCardIndex]) return;
+      const utterance = new SpeechSynthesisUtterance(deck.words[currentCardIndex].word);
+      utterance.lang = 'en-US';
+      window.speechSynthesis.speak(utterance);
+    };
+
+    // Flashcard Editing
+    window.openEditCardModal = function() {
+      const deck = state.decks[currentDeckIndex];
+      if (!deck || !deck.words[currentCardIndex]) return;
+      const item = deck.words[currentCardIndex];
+      document.getElementById('editCardWord').value = item.word;
+      document.getElementById('editCardMeaning').value = item.meaning;
+      document.getElementById('editCardExample').value = item.example || '';
+      document.getElementById('cardEditModal').classList.remove('hidden');
+    };
+
+    window.saveCardEdit = async function() {
+      const deck = state.decks[currentDeckIndex];
+      if (!deck || !deck.words[currentCardIndex]) return;
+
+      const word = document.getElementById('editCardWord').value.trim();
+      const meaning = document.getElementById('editCardMeaning').value.trim();
+      const example = document.getElementById('editCardExample').value.trim();
+
+      if (!word) return alert('Word cannot be empty.');
+
+      deck.words[currentCardIndex].word = word;
+      deck.words[currentCardIndex].meaning = meaning;
+      deck.words[currentCardIndex].example = example;
+
+      await persist();
+      closeEditCardModal();
+      renderCurrentCard();
+    };
+
+    window.deleteCurrentCard = async function() {
+      if (confirm('Delete this card from the deck?')) {
+        const deck = state.decks[currentDeckIndex];
+        deck.words.splice(currentCardIndex, 1);
+        if (currentCardIndex >= deck.words.length) currentCardIndex = Math.max(0, deck.words.length - 1);
+        await persist();
+        closeEditCardModal();
+        renderCurrentCard();
+      }
+    };
+
+    // --- SECTION 2: REWRITE / SPELLING TEST (WITH FULL UPDATE & RETEST) ---
+    window.startTest = function(missedOnly = false) {
+      const deck = state.decks[currentDeckIndex];
+      if (!deck || deck.words.length === 0) return;
+
+      let listToTest = [...deck.words];
+      if (missedOnly && testState.wrongList.length > 0) {
+        listToTest = listToTest.filter(w => testState.wrongList.some(wl => wl.id === w.id || wl.word === w.word));
+      }
+
+      // Shuffle items
+      testState.activeQueue = listToTest.sort(() => Math.random() - 0.5);
+      testState.totalCount = testState.activeQueue.length;
+      testState.currentIndex = 0;
+      testState.correctList = [];
+      testState.wrongList = [];
+
+      document.getElementById('testCompletePanel').classList.add('hidden');
+      document.getElementById('testActivePanel').classList.remove('hidden');
+      document.getElementById('testScore').textContent = `Score: 0`;
+
+      loadNextTestQuestion();
+    };
+
+    function loadNextTestQuestion() {
+      const feedback = document.getElementById('testFeedback');
+      feedback.className = 'hidden';
+      document.getElementById('testInputWord').value = '';
+      document.getElementById('testInputWord').disabled = false;
+      document.getElementById('testCheckBtn').disabled = false;
+
+      if (testState.activeQueue.length === 0) {
+        finishTest();
+        return;
+      }
+
+      testState.currentItem = testState.activeQueue.pop();
+      testState.currentIndex++;
+
+      document.getElementById('testStepIndicator').textContent = `Question ${testState.currentIndex} of ${testState.totalCount}`;
+      document.getElementById('testPromptMeaning').textContent = testState.currentItem.meaning;
+      document.getElementById('testPromptExample').textContent = testState.currentItem.example 
+        ? `Example: "${testState.currentItem.example.replace(new RegExp(testState.currentItem.word, 'gi'), '______')}"`
+        : '';
+
+      setTimeout(() => document.getElementById('testInputWord').focus(), 100);
+    }
+
+    window.checkTestWord = async function(e) {
+      e.preventDefault();
+      if (!testState.currentItem) return;
+
+      const input = document.getElementById('testInputWord').value.trim().toLowerCase();
+      const actual = testState.currentItem.word.trim().toLowerCase();
+      const feedback = document.getElementById('testFeedback');
+
+      document.getElementById('testInputWord').disabled = true;
+      document.getElementById('testCheckBtn').disabled = true;
+      feedback.classList.remove('hidden');
+
+      if (input === actual) {
+        testState.correctList.push(testState.currentItem);
+        testState.currentItem.status = 'mastered';
+        feedback.className = 'text-xs font-semibold p-2.5 rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 block';
+        feedback.textContent = `✅ Correct! "${testState.currentItem.word}"`;
+      } else {
+        testState.wrongList.push(testState.currentItem);
+        testState.currentItem.status = 'review';
+        feedback.className = 'text-xs font-semibold p-2.5 rounded-lg bg-red-50 text-red-700 border border-red-200 block';
+        feedback.textContent = `❌ Incorrect. Correct spelling: "${testState.currentItem.word}"`;
+      }
+
+      document.getElementById('testScore').textContent = `Score: ${testState.correctList.length}`;
+      await persist();
+      setTimeout(() => loadNextTestQuestion(), 1200);
+    };
+
+    window.skipTestWord = async function() {
+      if (!testState.currentItem) return;
+      testState.wrongList.push(testState.currentItem);
+      testState.currentItem.status = 'review';
+      await persist();
+      loadNextTestQuestion();
+    };
+
+    function finishTest() {
+      document.getElementById('testActivePanel').classList.add('hidden');
+      document.getElementById('testCompletePanel').classList.remove('hidden');
+
+      const percent = testState.totalCount > 0 ? Math.round((testState.correctList.length / testState.totalCount) * 100) : 0;
+      document.getElementById('testSummaryText').textContent = `You scored ${testState.correctList.length} out of ${testState.totalCount} (${percent}%). Word mastery statuses have been updated!`;
+
+      document.getElementById('testCountCorrect').textContent = testState.correctList.length;
+      document.getElementById('testListCorrect').innerHTML = testState.correctList.length > 0 
+        ? testState.correctList.map(w => `<li>• ${w.word}</li>`).join('') 
+        : '<li class="text-slate-400 italic">None</li>';
+
+      document.getElementById('testCountWrong').textContent = testState.wrongList.length;
+      document.getElementById('testListWrong').innerHTML = testState.wrongList.length > 0 
+        ? testState.wrongList.map(w => `<li>• ${w.word}</li>`).join('') 
+        : '<li class="text-slate-400 italic">None! Perfect score!</li>';
+
+      const retestBtn = document.getElementById('btnRetestMissed');
+      if (testState.wrongList.length === 0) {
+        retestBtn.classList.add('hidden');
+      } else {
+        retestBtn.classList.remove('hidden');
+      }
+      renderCurrentCard();
+    }
+
+    // --- SECTION 2: GRAMMAR BANK (NEW STRUCTURED FORMAT & EDITING) ---
+    function renderGrammarRules() {
+      const container = document.getElementById('grammarContainer');
+      if (!state.grammar || state.grammar.length === 0) {
+        container.innerHTML = `<div class="p-8 text-center text-xs text-slate-400 bg-white rounded-xl border border-dashed border-slate-300">No grammar notes added yet. Click "+ Add Grammar Rule" above.</div>`;
+        return;
+      }
+
+      container.innerHTML = state.grammar.map(rule => {
+        const examplesList = Array.isArray(rule.examples) ? rule.examples : (rule.examples ? [rule.examples] : []);
+        return `
+          <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm space-y-3">
+            <div class="flex justify-between items-start">
+              <div>
+                <span class="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-50 text-brand-700">${rule.tag || 'Grammar'}</span>
+                <h4 class="font-bold text-slate-900 text-base mt-1">${rule.topic || rule.title}</h4>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="editGrammarRule('${rule.id}')" class="text-xs font-semibold text-brand-600 hover:text-brand-800">✏️ Edit</button>
+                <button onclick="deleteGrammar('${rule.id}')" class="text-slate-400 hover:text-red-500 text-sm">&times;</button>
+              </div>
+            </div>
+
+            <!-- Formula -->
+            <div class="bg-slate-50 border border-slate-200 rounded-lg p-3">
+              <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Pattern / Formula</span>
+              <p class="font-mono text-xs font-bold text-brand-700">${rule.formula}</p>
+            </div>
+
+            <!-- When to use -->
+            ${rule.usage ? `
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-0.5">When to Use</span>
+                <p class="text-xs text-slate-700 leading-relaxed">${rule.usage}</p>
+              </div>
+            ` : ''}
+
+            <!-- Examples -->
+            ${examplesList.length > 0 ? `
+              <div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">Key Examples</span>
+                <ul class="space-y-1 text-xs text-slate-600 italic">
+                  ${examplesList.map(ex => `<li class="flex items-start gap-1.5"><span class="text-brand-500 font-bold">•</span><span>${ex}</span></li>`).join('')}
+                </ul>
+              </div>
+            ` : ''}
+
+            <!-- Common Mistake Warning -->
+            ${rule.mistake ? `
+              <div class="bg-red-50/60 border border-red-100 rounded-lg p-2.5 text-xs text-red-800">
+                <span class="font-bold block text-[11px] uppercase tracking-wider text-red-600 mb-0.5">⚠️ Common Mistake vs. Correct</span>
+                <p>${rule.mistake}</p>
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    window.openGrammarModal = function() {
+      document.getElementById('editingGrammarId').value = '';
+      document.getElementById('grammarModalTitle').textContent = 'Add Grammar Note';
+      document.getElementById('gTopic').value = '';
+      document.getElementById('gTag').value = '';
+      document.getElementById('gFormula').value = '';
+      document.getElementById('gUsage').value = '';
+      document.getElementById('gExamples').value = '';
+      document.getElementById('gMistake').value = '';
+      document.getElementById('grammarModal').classList.remove('hidden');
+    };
+
+    window.editGrammarRule = function(id) {
+      const g = state.grammar.find(item => item.id === id);
+      if (!g) return;
+      document.getElementById('editingGrammarId').value = g.id;
+      document.getElementById('grammarModalTitle').textContent = 'Edit Grammar Note';
+      document.getElementById('gTopic').value = g.topic || g.title || '';
+      document.getElementById('gTag').value = g.tag || '';
+      document.getElementById('gFormula').value = g.formula || '';
+      document.getElementById('gUsage').value = g.usage || '';
+      document.getElementById('gExamples').value = Array.isArray(g.examples) ? g.examples.join('\n') : (g.examples || '');
+      document.getElementById('gMistake').value = g.mistake || '';
+      document.getElementById('grammarModal').classList.remove('hidden');
+    };
+
+    window.saveGrammarSubmit = async function() {
+      const editingId = document.getElementById('editingGrammarId').value;
+      const topic = document.getElementById('gTopic').value.trim();
+      const tag = document.getElementById('gTag').value.trim() || 'General';
+      const formula = document.getElementById('gFormula').value.trim();
+      const usage = document.getElementById('gUsage').value.trim();
+      const rawExamples = document.getElementById('gExamples').value.trim();
+      const mistake = document.getElementById('gMistake').value.trim();
+
+      if (!topic) return alert('Please enter a topic name.');
+
+      const examples = rawExamples.split('\n').map(e => e.trim()).filter(Boolean);
+
+      if (editingId) {
+        const item = state.grammar.find(g => g.id === editingId);
+        if (item) {
+          item.topic = topic;
+          item.tag = tag;
+          item.formula = formula;
+          item.usage = usage;
+          item.examples = examples;
+          item.mistake = mistake;
+        }
+      } else {
+        state.grammar.push({
+          id: 'g-' + Date.now(),
+          topic,
+          tag,
+          formula,
+          usage,
+          examples,
+          mistake
+        });
+      }
+
+      await persist();
+      closeGrammarModal();
+      renderGrammarRules();
+    };
+
+    window.deleteGrammar = async function(id) {
+      if (confirm('Delete this grammar rule?')) {
+        state.grammar = state.grammar.filter(g => g.id !== id);
+        await persist();
+        renderGrammarRules();
+      }
+    };
+
+    // --- SECTION 2: BATCH UPLOAD ---
+    window.saveBatchWords = async function() {
+      const deckName = document.getElementById('newDeckName').value.trim() || `Batch ${state.decks.length + 1} (25 Words)`;
+      const rawText = document.getElementById('batchTextarea').value.trim();
+
+      if (!rawText) return alert('Please paste words lines.');
+
+      const lines = rawText.split('\n');
+      const words = [];
+
+      lines.forEach((line, idx) => {
+        const parts = line.split('|').map(s => s.trim());
+        if (parts[0]) {
+          words.push({
+            id: 'w-' + Date.now() + '-' + idx,
+            word: parts[0],
+            meaning: parts[1] || 'Definition pending',
+            example: parts[2] || '',
+            status: 'new'
+          });
+        }
+      });
+
+      state.decks.push({
+        id: 'deck-' + Date.now(),
+        name: deckName,
+        words: words
+      });
+
+      await persist();
+      document.getElementById('newDeckName').value = '';
+      document.getElementById('batchTextarea').value = '';
+      alert(`Created "${deckName}" with ${words.length} flashcards!`);
+      switchEnglishSubTab('cards');
+      renderDeckDropdown();
+      currentDeckIndex = state.decks.length - 1;
+      document.getElementById('deckSelector').value = currentDeckIndex;
+      loadSelectedDeck();
+    };
+
+    // --- Modal Controls & Firebase Config ---
+    window.closeGoalModal = () => document.getElementById('goalModal').classList.add('hidden');
+    window.closeGrammarModal = () => document.getElementById('grammarModal').classList.add('hidden');
+    window.closeEditCardModal = () => document.getElementById('cardEditModal').classList.add('hidden');
+    window.closeSyncModal = () => document.getElementById('syncModal').classList.add('hidden');
+
+    document.getElementById('syncSettingsBtn').onclick = () => {
+      document.getElementById('syncModal').classList.remove('hidden');
+      document.getElementById('syncDocId').value = localStorage.getItem('fb_doc_id') || '';
+      document.getElementById('firebaseConfigInput').value = localStorage.getItem('fb_config') || '';
+    };
+
+    window.saveFirebaseSettings = function() {
+      const configStr = document.getElementById('firebaseConfigInput').value.trim();
+      const docId = document.getElementById('syncDocId').value.trim();
+      if (configStr) localStorage.setItem('fb_config', configStr);
+      if (docId) localStorage.setItem('fb_doc_id', docId);
+      alert('Settings saved. Reloading page...');
+      location.reload();
+    };
+
+    window.exportDataBackup = function() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(state, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `dashboard_backup_${new Date().toISOString().slice(0,10)}.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    };
+
+    // Tab switchers
+    window.switchTab = function(tab) {
+      document.getElementById('sectionGoals').classList.toggle('hidden', tab !== 'goals');
+      document.getElementById('sectionEnglish').classList.toggle('hidden', tab !== 'english');
+
+      document.getElementById('tabBtnGoals').className = tab === 'goals' 
+        ? 'py-2.5 font-semibold text-sm border-b-2 border-brand-600 text-brand-600 flex items-center gap-2'
+        : 'py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2';
+
+      document.getElementById('tabBtnEnglish').className = tab === 'english'
+        ? 'py-2.5 font-semibold text-sm border-b-2 border-brand-600 text-brand-600 flex items-center gap-2'
+        : 'py-2.5 font-semibold text-sm border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center gap-2';
+    };
+
+    window.switchEnglishSubTab = function(sub) {
+      document.getElementById('viewFlashcards').classList.toggle('hidden', sub !== 'cards');
+      document.getElementById('viewTest').classList.toggle('hidden', sub !== 'test');
+      document.getElementById('viewGrammar').classList.toggle('hidden', sub !== 'grammar');
+      document.getElementById('viewManage').classList.toggle('hidden', sub !== 'manage');
+
+      const tabs = ['cards', 'test', 'grammar', 'manage'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`subTab${t.charAt(0).toUpperCase() + t.slice(1)}`);
+        if (btn) {
+          btn.className = t === sub 
+            ? 'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-brand-600 text-white'
+            : 'px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300';
+        }
+      });
+    };
+  </script>
+</body>
+</html>
